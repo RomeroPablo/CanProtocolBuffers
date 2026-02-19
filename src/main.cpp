@@ -14,6 +14,7 @@
 
 #define PORT 5052
 #define IP "127.0.0.1"
+
 void writeCanMessage(uint32_t fd) {
   capnp::MallocMessageBuilder message;
   CanFrame::Builder canFrame = message.initRoot<CanFrame>();

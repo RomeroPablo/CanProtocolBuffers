@@ -6,5 +6,5 @@ struct CanFrame {
   rtr       @2 :Bool;
   dlc       @3 :UInt8;
   timestamp @4 :UInt32;
-  data      @5 :Data;  # up to 8 bytes for classical CAN
+  data      @5 :Data;
 }
