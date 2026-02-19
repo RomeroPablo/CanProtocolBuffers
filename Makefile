@@ -7,6 +7,7 @@ LDLIBS ?= -pthread
 
 SCHEMA := schema/can.capnp
 ARTIFACTS_DIR := artifacts
+CC_JSON := compile_commands.json
 BUILD_DIR := $(ARTIFACTS_DIR)/obj
 GEN_CPP := src/schema/can.capnp.c++
 GEN_H := src/schema/can.capnp.h
@@ -67,6 +68,6 @@ regen:
 	capnp compile -oc++:src/ -Ischema $(SCHEMA)
 
 clean:
-	rm -rf $(ARTIFACTS_DIR)
+	rm -rf $(ARTIFACTS_DIR) $(CC_JSON)
 
 .PHONY: all run clean regen
