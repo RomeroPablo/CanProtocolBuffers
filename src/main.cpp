@@ -3,13 +3,18 @@
 #include <capnp/serialize-packed.h>
 
 #include <fcntl.h>
+#include <thread>
 #include <unistd.h>
 
+#include <chrono>
 #include <iostream>
 
 #include "schema/can.capnp.h"
+#include "tcp.hpp"
 
-void writeCanMessage(const std::string& fileBuffer) {
+#define PORT 5052
+#define IP "127.0.0.1"
+void writeCanMessage(uint32_t fd) {
   capnp::MallocMessageBuilder message;
   CanFrame::Builder canFrame = message.initRoot<CanFrame>();
 
@@ -18,28 +23,42 @@ void writeCanMessage(const std::string& fileBuffer) {
   canFrame.setDlc(0x08);
   canFrame.setExtended(false);
   canFrame.setRtr(false);
-  canFrame.setTimestamp(0);
+  canFrame.setTimestamp(static_cast<std::uint64_t>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>((
+                        std::chrono::system_clock::now()).time_since_epoch()).count()));
+
   canFrame.setData(kj::arrayPtr(reinterpret_cast<const capnp::byte*>(frame), sizeof(frame)));
-
-  int fd = open(fileBuffer.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
-
   writePackedMessageToFd(fd, message);
-
-  close(fd);
 }
 
-void readCanMessage(std::string fileBuffer){
-    int fd = open(fileBuffer.c_str(), O_RDONLY);
+void readCanMessage(uint32_t fd){
     capnp::PackedFdMessageReader message(fd);
     CanFrame::Reader canFrame = message.getRoot<CanFrame>();
-    std::cout << "0x" << std::hex << canFrame.getId() << std::endl;
+    std::cout << "received message from 0x" << std::hex << canFrame.getId()
+              << " recorded at time 0x" << std::hex << canFrame.getTimestamp() << std::endl;
+}
+
+void producer(){
+    Tcp connection;
+    connection.createConnection(PORT, NULL);
+    while(1){
+        writeCanMessage(connection.client_fd);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+void consumer(){
+    Tcp connection;
+    connection.createConnection(PORT, IP);
+    while(1){
+        readCanMessage(connection.sock);
+    }
 }
 
 int main() {
-    const std::string outputFile = "artifacts/can.bin";
-    writeCanMessage(outputFile);
-    std::cout << "Wrote to " << outputFile << std::endl;
-    readCanMessage(outputFile);
-    std::cout << "Read from " << outputFile << std::endl;
+    std::thread producer_t(producer);
+    std::thread consumer_t(consumer);
+    producer_t.join();
+    consumer_t.join();
     return 0;
 }
