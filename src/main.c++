@@ -1,96 +1,45 @@
 #include <capnp/message.h>
+#include <capnp/serialize.h>
 #include <capnp/serialize-packed.h>
 
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <cerrno>
-#include <cstring>
-#include <filesystem>
 #include <iostream>
-#include <string>
 
 #include "schema/can.capnp.h"
 
-static void writeAddressBook(const std::string& path) {
-  ::capnp::MallocMessageBuilder message;
-  AddressBook::Builder addressBook = message.initRoot<AddressBook>();
+void writeCanMessage(const std::string& fileBuffer) {
+  capnp::MallocMessageBuilder message;
+  CanFrame::Builder canFrame = message.initRoot<CanFrame>();
 
-  ::capnp::List<Person>::Builder people = addressBook.initPeople(1);
-  Person::Builder alice = people[0];
+  uint8_t frame[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0x00, 0x00, 0x00, 0x00};
+  canFrame.setId(0x123);
+  canFrame.setDlc(0x08);
+  canFrame.setExtended(false);
+  canFrame.setRtr(false);
+  canFrame.setTimestamp(0);
+  canFrame.setData(kj::arrayPtr(reinterpret_cast<const capnp::byte*>(frame), sizeof(frame)));
 
-  alice.setId(123);
-  alice.setName("Alice Example");
-  alice.setEmail("alice@example.com");
+  int fd = open(fileBuffer.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
 
-  ::capnp::List<Person::PhoneNumber>::Builder phones = alice.initPhones(2);
-  phones[0].setNumber("+1-555-0100");
-  phones[0].setType(Person::PhoneNumber::Type::MOBILE);
+  writePackedMessageToFd(fd, message);
 
-  phones[1].setNumber("+1-555-0101");
-  phones[1].setType(Person::PhoneNumber::Type::WORK);
-
-  int fd = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0644);
-  if (fd < 0) {
-    throw std::runtime_error(
-        "Failed to open output file: " + path + ": " + std::strerror(errno));
-  }
-
-  try {
-    writePackedMessageToFd(fd, message);
-  } catch (...) {
-    ::close(fd);
-    throw;
-  }
-
-  if (::close(fd) != 0) {
-    throw std::runtime_error("Failed to close output file: " + path);
-  }
+  close(fd);
 }
 
-static void readAddressBook(const std::string& path) {
-  int fd = ::open(path.c_str(), O_RDONLY);
-  if (fd < 0) {
-    throw std::runtime_error("Failed to open input file: " + path);
-  }
-
-  ::capnp::PackedFdMessageReader message(fd);
-  AddressBook::Reader addressBook = message.getRoot<AddressBook>();
-
-  for (Person::Reader person : addressBook.getPeople()) {
-    std::cout << "Person\n";
-    std::cout << "  id: " << person.getId() << "\n";
-    std::cout << "  name: " << person.getName().cStr() << "\n";
-    std::cout << "  email: " << person.getEmail().cStr() << "\n";
-
-    for (Person::PhoneNumber::Reader phone : person.getPhones()) {
-      const char* type = "unknown";
-      switch (phone.getType()) {
-        case Person::PhoneNumber::Type::MOBILE:
-          type = "mobile";
-          break;
-        case Person::PhoneNumber::Type::HOME:
-          type = "home";
-          break;
-        case Person::PhoneNumber::Type::WORK:
-          type = "work";
-          break;
-      }
-
-      std::cout << "  phone (" << type << "): " << phone.getNumber().cStr() << "\n";
-    }
-  }
-
-  if (::close(fd) != 0) {
-    throw std::runtime_error("Failed to close input file: " + path);
-  }
+void readCanMessage(std::string fileBuffer){
+    int fd = open(fileBuffer.c_str(), O_RDONLY);
+    capnp::PackedFdMessageReader message(fd);
+    CanFrame::Reader canFrame = message.getRoot<CanFrame>();
+    std::cout << canFrame.getId() << std::endl;
 }
 
 int main() {
-  const std::string outputFile = "artifacts/can.bin";
-    writeAddressBook(outputFile);
-    std::cout << "Wrote " << outputFile << "\n\n";
-    readAddressBook(outputFile);
-
-  return 0;
+    const std::string outputFile = "artifacts/can.bin";
+    writeCanMessage(outputFile);
+    std::cout << "Wrote to " << outputFile << std::endl;
+    readCanMessage(outputFile);
+    std::cout << "Read from " << outputFile << std::endl;
+    return 0;
 }
