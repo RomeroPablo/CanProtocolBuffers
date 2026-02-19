@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "schema/addressbook.capnp.h"
+#include "schema/CAN.capnp.h"
 
 static void writeAddressBook(const std::string& path) {
   ::capnp::MallocMessageBuilder message;
@@ -86,7 +86,7 @@ static void readAddressBook(const std::string& path) {
 }
 
 int main() {
-  const std::string outputFile = "addressbook.bin";
+  const std::string outputFile = "CAN.bin";
 
   try {
     writeAddressBook(outputFile);

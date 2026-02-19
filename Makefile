@@ -3,9 +3,9 @@ CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pedantic
 LDFLAGS ?=
 LDLIBS ?= -lcapnp -lkj
 
-SCHEMA := schema/addressbook.capnp
-GEN_CPP := src/schema/addressbook.capnp.c++
-GEN_H := src/schema/addressbook.capnp.h
+SCHEMA := schema/CAN.capnp
+GEN_CPP := src/schema/CAN.capnp.c++
+GEN_H := src/schema/CAN.capnp.h
 APP := addressbook-demo
 
 all: run
@@ -22,6 +22,6 @@ run: $(APP)
 	./$(APP)
 
 clean:
-	rm -f $(APP) addressbook.bin $(GEN_CPP) $(GEN_H)
+	rm -f $(APP) CAN.bin $(GEN_CPP) $(GEN_H)
 
 .PHONY: all gen run clean

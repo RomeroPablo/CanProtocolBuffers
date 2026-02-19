@@ -1,4 +1,4 @@
-@0xdbb9ad1f14bf0b36;
+@0xf6827afa7700e3c2;
 
 struct Person {
   id @0 :UInt32;
