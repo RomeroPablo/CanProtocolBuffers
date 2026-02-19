@@ -32,7 +32,7 @@ void readCanMessage(std::string fileBuffer){
     int fd = open(fileBuffer.c_str(), O_RDONLY);
     capnp::PackedFdMessageReader message(fd);
     CanFrame::Reader canFrame = message.getRoot<CanFrame>();
-    std::cout << canFrame.getId() << std::endl;
+    std::cout << "0x" << std::hex << canFrame.getId() << std::endl;
 }
 
 int main() {

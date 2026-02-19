@@ -16,8 +16,8 @@ gen: $(GEN_CPP) $(GEN_H)
 $(GEN_CPP) $(GEN_H): $(SCHEMA)
 	capnp compile -oc++:src/ -Ischema $(SCHEMA)
 
-$(APP): src/main.c++ gen | $(ARTIFACTS_DIR)
-	$(CXX) $(CXXFLAGS) src/main.c++ $(GEN_CPP) -o $(APP) $(LDFLAGS) $(LDLIBS)
+$(APP): src/main.cpp gen | $(ARTIFACTS_DIR)
+	$(CXX) $(CXXFLAGS) src/main.cpp $(GEN_CPP) -o $(APP) $(LDFLAGS) $(LDLIBS)
 
 run: $(APP) $(ARTIFACTS_DIR)
 	$(APP)
