@@ -1,31 +1,72 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++23 -O2 -Wall -Wextra -pedantic
+THIRD_PARTY_CXXFLAGS ?= -std=c++23 -O2 -w
+CPPFLAGS ?= -Isrc/lib -Isrc
 LDFLAGS ?=
-LDLIBS ?= -lcapnp -lkj
+LDLIBS ?= -pthread
 
 SCHEMA := schema/can.capnp
 ARTIFACTS_DIR := artifacts
+BUILD_DIR := $(ARTIFACTS_DIR)/obj
 GEN_CPP := src/schema/can.capnp.c++
 GEN_H := src/schema/can.capnp.h
 APP := $(ARTIFACTS_DIR)/can-demo
 
+CAPNP_SRCS := \
+	src/lib/capnp/message.c++ \
+	src/lib/capnp/arena.c++ \
+	src/lib/capnp/layout.c++ \
+	src/lib/capnp/list.c++ \
+	src/lib/capnp/serialize.c++ \
+	src/lib/capnp/serialize-packed.c++ \
+	src/lib/capnp/blob.c++
+
+KJ_SRCS := \
+	src/lib/kj/common.c++ \
+	src/lib/kj/array.c++ \
+	src/lib/kj/debug.c++ \
+	src/lib/kj/exception.c++ \
+	src/lib/kj/io.c++ \
+	src/lib/kj/memory.c++ \
+	src/lib/kj/string.c++ \
+	src/lib/kj/mutex.c++ \
+	src/lib/kj/hash.c++ \
+	src/lib/kj/table.c++ \
+	src/lib/kj/units.c++
+
+MAIN_OBJ := $(BUILD_DIR)/main.o
+SCHEMA_OBJ := $(BUILD_DIR)/schema/can.capnp.o
+CAPNP_OBJS := $(patsubst src/lib/%.c++,$(BUILD_DIR)/lib/%.o,$(CAPNP_SRCS))
+KJ_OBJS := $(patsubst src/lib/%.c++,$(BUILD_DIR)/lib/%.o,$(KJ_SRCS))
+OBJS := $(MAIN_OBJ) $(SCHEMA_OBJ) $(CAPNP_OBJS) $(KJ_OBJS)
+
 all: run
 
-gen: $(GEN_CPP) $(GEN_H)
+$(APP): $(OBJS) | $(ARTIFACTS_DIR)
+	$(CXX) $(OBJS) -o $(APP) $(LDFLAGS) $(LDLIBS)
 
-$(GEN_CPP) $(GEN_H): $(SCHEMA)
-	capnp compile -oc++:src/ -Ischema $(SCHEMA)
+$(MAIN_OBJ): src/main.cpp | $(ARTIFACTS_DIR)
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-$(APP): src/main.cpp gen | $(ARTIFACTS_DIR)
-	$(CXX) $(CXXFLAGS) src/main.cpp $(GEN_CPP) -o $(APP) $(LDFLAGS) $(LDLIBS)
+$(SCHEMA_OBJ): $(GEN_CPP) $(GEN_H) | $(ARTIFACTS_DIR)
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $(GEN_CPP) -o $@
 
-run: $(APP) $(ARTIFACTS_DIR)
+$(BUILD_DIR)/lib/%.o: src/lib/%.c++ | $(ARTIFACTS_DIR)
+	mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(THIRD_PARTY_CXXFLAGS) -c $< -o $@
+
+run: $(APP)
 	$(APP)
 
 $(ARTIFACTS_DIR):
 	mkdir -p $(ARTIFACTS_DIR)
 
-clean:
-	rm -rf $(ARTIFACTS_DIR) $(GEN_CPP) $(GEN_H)
+regen:
+	capnp compile -oc++:src/ -Ischema $(SCHEMA)
 
-.PHONY: all gen run clean
+clean:
+	rm -rf $(ARTIFACTS_DIR)
+
+.PHONY: all run clean regen

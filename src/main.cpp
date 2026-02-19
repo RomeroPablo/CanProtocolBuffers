@@ -1,6 +1,6 @@
-#include <capnp/message.h>
-#include <capnp/serialize.h>
-#include <capnp/serialize-packed.h>
+#include "lib/capnp/message.h"
+#include "lib/capnp/serialize.h"
+#include "lib/capnp/serialize-packed.h"
 
 #include <fcntl.h>
 #include <thread>
@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "schema/can.capnp.h"
-#include "tcp.hpp"
+#include "lib/tcp.hpp"
 
 #define PORT 5052
 #define IP "127.0.0.1"
@@ -58,6 +58,7 @@ void consumer(){
 
 int main() {
     std::thread producer_t(producer);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     std::thread consumer_t(consumer);
     producer_t.join();
     consumer_t.join();
