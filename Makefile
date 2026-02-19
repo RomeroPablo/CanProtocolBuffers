@@ -3,10 +3,12 @@ CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pedantic
 LDFLAGS ?=
 LDLIBS ?= -lcapnp -lkj
 
-SCHEMA := schema/CAN.capnp
-GEN_CPP := src/schema/CAN.capnp.c++
-GEN_H := src/schema/CAN.capnp.h
-APP := addressbook-demo
+SCHEMA := schema/can.capnp
+ARTIFACTS_DIR := artifacts
+GEN_CPP := src/schema/can.capnp.c++
+GEN_H := src/schema/can.capnp.h
+APP := $(ARTIFACTS_DIR)/can-demo
+OUTPUT_BIN := $(ARTIFACTS_DIR)/can.bin
 
 all: run
 
@@ -15,13 +17,16 @@ gen: $(GEN_CPP) $(GEN_H)
 $(GEN_CPP) $(GEN_H): $(SCHEMA)
 	capnp compile -oc++:src -Ischema $(SCHEMA)
 
-$(APP): src/main.c++ gen
+$(APP): src/main.c++ gen | $(ARTIFACTS_DIR)
 	$(CXX) $(CXXFLAGS) src/main.c++ $(GEN_CPP) -o $(APP) $(LDFLAGS) $(LDLIBS)
 
-run: $(APP)
-	./$(APP)
+run: $(APP) $(ARTIFACTS_DIR)
+	$(APP)
+
+$(ARTIFACTS_DIR):
+	mkdir -p $(ARTIFACTS_DIR)
 
 clean:
-	rm -f $(APP) CAN.bin $(GEN_CPP) $(GEN_H)
+	rm -rf $(ARTIFACTS_DIR) $(GEN_CPP) $(GEN_H)
 
 .PHONY: all gen run clean
