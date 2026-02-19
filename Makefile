@@ -1,5 +1,5 @@
 CXX ?= g++
-CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -pedantic
+CXXFLAGS ?= -std=c++23 -O2 -Wall -Wextra -pedantic
 LDFLAGS ?=
 LDLIBS ?= -lcapnp -lkj
 
@@ -8,7 +8,6 @@ ARTIFACTS_DIR := artifacts
 GEN_CPP := src/schema/can.capnp.c++
 GEN_H := src/schema/can.capnp.h
 APP := $(ARTIFACTS_DIR)/can-demo
-OUTPUT_BIN := $(ARTIFACTS_DIR)/can.bin
 
 all: run
 

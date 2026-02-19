@@ -24,8 +24,11 @@ struct AddressBook {
   people @0 :List(Person);
 }
 
-struct CANMessage {
-    id @0 :UInt32;
-    dlc @1 : UInt32;
-    data @2 : List(UInt32);
+struct CanFrame {
+  id        @0 :UInt32;
+  extended  @1 :Bool;
+  rtr       @2 :Bool;
+  dlc       @3 :UInt8;
+  data      @4 :Data;  # up to 8 bytes for classical CAN
+  timestamp @5 :UInt64;
 }

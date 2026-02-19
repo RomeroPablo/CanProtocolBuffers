@@ -88,18 +88,9 @@ static void readAddressBook(const std::string& path) {
 
 int main() {
   const std::string outputFile = "artifacts/can.bin";
-
-  std::filesystem::create_directories("artifacts");
-
-  try {
     writeAddressBook(outputFile);
     std::cout << "Wrote " << outputFile << "\n\n";
-
     readAddressBook(outputFile);
-  } catch (const std::exception& ex) {
-    std::cerr << "Error: " << ex.what() << "\n";
-    return 1;
-  }
 
   return 0;
 }
